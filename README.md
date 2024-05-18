@@ -10,7 +10,7 @@ Have you ever admired the smooth swiping between sections in apps like WhatsApp?
 
 ## You Liked It? Time to Code It!
 
-### Getting Started (It's Easy!)
+### Getting Started
 
 We only need one library from Flutter: `material.dart`. This library provides essential building blocks for creating beautiful and functional user interfaces. Let's import it at the beginning of our code:
 
@@ -18,7 +18,7 @@ We only need one library from Flutter: `material.dart`. This library provides es
 import 'package:flutter/material.dart';
 ```
 
-### Defining Your App's Sections (Think Big!)
+### Defining Your App's Sections
 
 Imagine your app's main areas, like a home screen, search bar, or profile page. These will be the sections users can swipe between. In this example, we'll use colored containers to represent them, but you can replace them with your actual app screens later. We'll store these sections in a list called `Pages.list`:
 
@@ -33,7 +33,7 @@ class Pages {
 }
 ```
 
-### Building Your App (Let's Get Swiping!)
+### Building Your App
 
 Now comes the exciting part! We'll create a `MainApp` class that behaves like our app's core:
 
@@ -89,5 +89,93 @@ class _MainAppState extends State<MainApp> {
 }
 ```
 ---
+### Scrolling Vertically But Pages Change?
+
+Since we have not specified any physics for our `PageView`, even a slight horizontal movement while vertically scrolling can be mistaken for a call to change page. To correct that we can extend `ScrollPhyics` and specify our own custom rules!
+```dart
+class PageViewScrollPhysics extends ScrollPhysics {
+  const PageViewScrollPhysics({super.parent});
+
+  @override
+  PageViewScrollPhysics applyTo(ScrollPhysics? ancestor) {
+    return PageViewScrollPhysics(parent: buildParent(ancestor));
+  }
+
+  @override
+  double get dragStartDistanceMotionThreshold => 75;
+
+  @override
+  double get minFlingDistance => 75;
+}
+```
+The only thing we need to do now is add this physics to our `PageView`.
+
+---
 ## THE END
+ Our final code now looks like:
+```dart
+import 'package:flutter/material.dart';
+
+class Pages {
+  static final List<Widget> list = [
+    Container(color: Colors.amber, child: Center(child: Text('Home'))),
+    Container(color: Colors.blue, child: Center(child: Text('Search'))),
+    Container(color: Colors.green, child: Center(child: Text('Feed'))),
+    Container(color: Colors.red, child: Center(child: Text('Profile'))),
+  ];
+}
+
+void main() => runApp(MaterialApp(home: MainApp(), debugShowCheckedModeBanner: false));
+
+class MainApp extends StatefulWidget {
+  @override
+  _MainAppState createState() => _MainAppState();
+}
+
+class _MainAppState extends State<MainApp> {
+  int _currentPageIndex = 0;
+  final PageController _pageController = PageController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: PageView(
+        controller: _pageController, // Link the PageView to the controller
+        children: Pages.list,
+        physics: PageViewScrollPhysics(),
+        onPageChanged: (index) => setState(() => _currentPageIndex = index),
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentPageIndex, // Keep the nav bar in sync
+        onDestinationSelected: (index) {
+          setState(() => _currentPageIndex = index); // Update current page
+          _pageController.jumpToPage(index); // Jump to the selected page
+        },
+        destinations: [
+          NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.search), label: 'Search'),
+          NavigationDestination(icon: Icon(Icons.feed_outlined), label: 'Feed'),
+          NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
+        ],
+      ),
+    );
+  }
+}
+
+class PageViewScrollPhysics extends ScrollPhysics {
+  const PageViewScrollPhysics({super.parent});
+
+  @override
+  PageViewScrollPhysics applyTo(ScrollPhysics? ancestor) {
+    return PageViewScrollPhysics(parent: buildParent(ancestor));
+  }
+
+  @override
+  double get dragStartDistanceMotionThreshold => 75;
+
+  @override
+  double get minFlingDistance => 75;
+}
+```
+
 With this code, you've achieved a swipeable page layout with a functional navigation bar, mimicking the WhatsApp experience! Hope you have enjoyed this short tutorial.
